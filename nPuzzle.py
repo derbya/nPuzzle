@@ -25,40 +25,13 @@ class Puzzle:
         print("parent: " + self.owner)
         print("moves: " + str(self.moves))
 
-#example = [  15, 2, 1, 12,
-#        8, 5, 6, 11,
-#        4, 9, 10, 7,
-#        3, 14, 13, 0]
-
-#example = [1, 2, 3, 4,
-#        5, 6, 7, 8,
-#        0, 10, 11, 12,
-#        9, 13, 14, 15]
-
-#example = [1, 8, 2,
-#        0, 4, 3,
-#        7, 6, 5,]
-
-#example = [13, 2, 10, 3,
-#        1, 12, 8, 4,
-#        5, 0, 9, 6,
-#        15, 14, 11, 7]
-
-#example = [ 0, 5, 1, 4,
-#            9, 6, 2, 8,
-#            10, 14, 3, 11,
-#            13, 15, 7, 12 ]
-
 #"""
 example = [ 0, 2, 1, 3,
             4, 5, 6, 7,
             8, 9, 10, 11,
             12, 13, 14, 15 ]
 #"""
-#15805 2
-#18428 2
-#25412 4
-#28533 4
+
 #example = [1, 14, 3, 0,
 #            11, 2, 12, 5,
 #            10, 13, 8, 15,
@@ -269,18 +242,15 @@ def printStateOrder(start, end, poppedPuzzles):
 
 def solvePuzzle(queue, solved):
     global identityCounter
-    global worldClock
     startingPuzzle = queue[0][2].puzzle.copy()
     heapq.heapify(queue)
     poppedPuzzles = {}
     queuedPuzzles = {}
     while True:
 #        input("step?")
-#        worldClock += 1
         popped = heapq.heappop(queue)
 #        print("h = " + str(popped[2].moves))
 #        print("g = " + str(popped[2].weight - popped[2].moves))
-        identityCounter += 4
 #        print(popped.puzzle)
 #        popped[2].printPuzzleClass()
         if ifSolved(popped[2].puzzle, solved):
@@ -300,15 +270,12 @@ def solvePuzzle(queue, solved):
                     if not duplicatePuzzle(i, poppedPuzzles):
                         if not duplicatePuzzle(i, queuedPuzzles):
                             heapq.heappush(queue, (i.weight, i.id,  i))
-#                            insertChild(i, queue)
                             queuedPuzzles.update( { i.id : i  } )
             poppedPuzzles.update( { popped[2].id : popped[2] } )
 
-
 puzzleQueue = []
-#newPuzzle = remapPuzzle(example)
 newPuzzle = example
+"""don't hard code things"""
 solvedPuzzle = [1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7]
-#solvedPuzzle = returnSolvedExample(len(example))
 puzzleQueue.append((getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), Puzzle(newPuzzle, getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), 0)))
 solvePuzzle(puzzleQueue, solvedPuzzle)
