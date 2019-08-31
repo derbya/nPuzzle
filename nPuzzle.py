@@ -3,17 +3,11 @@ import calendar
 import time
 import math
 import sys
+import heapq
 
 identityCounter = 0
 
 startTime = calendar.timegm(time.gmtime())
-
-class Move(Enum):
-    START   = 0
-    LEFT    = 1
-    RIGHT   = 2
-    UP      = 3
-    DOWN    = 4
 
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
@@ -55,10 +49,20 @@ class Puzzle:
 #            10, 14, 3, 11,
 #            13, 15, 7, 12 ]
 
+#"""
 example = [ 0, 2, 1, 3,
             4, 5, 6, 7,
             8, 9, 10, 11,
             12, 13, 14, 15 ]
+#"""
+#15805 2
+#18428 2
+#25412 4
+#28533 4
+#example = [1, 14, 3, 0,
+#            11, 2, 12, 5,
+#            10, 13, 8, 15,
+#            9, 6, 7, 4]
 
 #example = [ 2, 1, 3, 4,
 #            5, 6, 7, 8,
@@ -87,6 +91,23 @@ example = [ 0, 2, 1, 3,
 #            9, 10, 11, 12,
 #            13, 14, 0, 15]
 
+"""           1  2  3  4
+           5  6  7  8
+           9  10 11 12
+           13 14 15 0
+
+           1  2  3  4
+           12 13 14 5
+           11 0  15 6
+           10 9  8  7"""
+
+"""
+example = [2, 3, 4, 5,
+           1, 12, 14, 6,
+           13, 15, 7, 0,
+           11, 10, 9, 8]
+#"""
+
 #example = [ 1, 7, 2, 3, 5,
 #            6, 12, 8, 9, 4,
 #            11, 17, 13, 10, 15,
@@ -112,9 +133,17 @@ def ifSolved(puzzle, solved):
 def getWeight(puzzle, solved, moves):
     weight = moves
     for i in range(len(puzzle)):
-        if i != movePiece:
-            weight += abs(abs((puzzle.index(i) % theRoot) - (i - 1 % theRoot)) + abs(int(abs(puzzle.index(i) / theRoot)) - int(abs((i - 1) / theRoot))))
-    return weight 
+        if i != 0:
+#            print("i = " + str(i))
+#            print(movePiece)
+#            print(" column: " + str(abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))))
+#            print("row: " + str(abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))))
+            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
+            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
+            weight += row + column#(abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot) + abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))))
+#            print("Weight: " + str(weight))
+#            print()
+    return weight
 #"""
 
 #    for i in range(len(puzzle)):
@@ -136,9 +165,9 @@ def getWeight(puzzle, solved, moves):
 movePiece = 0
 def moveUp(puzzle, identity, moves, solved):
     global identityCounter
-    index = puzzle.index(movePiece)
+    index = puzzle.index(0)
     newPuzzle = puzzle.copy()
-    if index < len(puzzle) / len(puzzle):
+    if index < theRoot:
         return None
     else:
         newPuzzle[index], newPuzzle[int(index - theRoot)] = newPuzzle[int(index - theRoot)], newPuzzle[index]
@@ -149,9 +178,9 @@ def moveUp(puzzle, identity, moves, solved):
 
 def moveDown(puzzle, identity, moves, solved):
     global identityCounter
-    index = puzzle.index(movePiece)
+    index = puzzle.index(0)
     newPuzzle = puzzle.copy()
-    if index > len(puzzle) - 1 - math.sqrt(len(puzzle)):
+    if index >= len(puzzle) - theRoot:
         return None
     else:
         newPuzzle[index], newPuzzle[int(index + theRoot)] = newPuzzle[int(index + theRoot)], newPuzzle[index]
@@ -162,7 +191,7 @@ def moveDown(puzzle, identity, moves, solved):
 
 def moveRight(puzzle, identity, moves, solved):
     global identityCounter
-    index = puzzle.index(movePiece)
+    index = puzzle.index(0)
     newPuzzle = puzzle.copy()
     if index % math.sqrt(len(puzzle)) == 0:
         return None
@@ -175,7 +204,7 @@ def moveRight(puzzle, identity, moves, solved):
 
 def moveLeft(puzzle, identity, moves, solved):
     global identityCounter
-    index = puzzle.index(movePiece)
+    index = puzzle.index(0)
     newPuzzle = puzzle.copy()
     if (index + 1) % theRoot == 0:
         return None
@@ -211,39 +240,9 @@ worldClock = 0
 def arrayToString(array):
     return "'".join([str(num) for num in array])
 
-def remapEndSolution(oldPuzzle):
-    puzzle = []
-    for i in range(len(oldPuzzle)):
-        if oldPuzzle[i] == 5:
-            puzzle.append(12)
-        elif oldPuzzle[i] == 6:
-            puzzle.append(13)
-        elif oldPuzzle[i] == 7:
-            puzzle.append(14)
-        elif oldPuzzle[i] == 8:
-            puzzle.append(5)
-        elif oldPuzzle[i] == 9:
-            puzzle.append(11)
-        elif oldPuzzle[i] == 10:
-            puzzle.append(0)
-        elif oldPuzzle[i] == 11:
-            puzzle.append(15)
-        elif oldPuzzle[i] == 12:
-            puzzle.append(6)
-        elif oldPuzzle[i] == 13:
-            puzzle.append(10)
-        elif oldPuzzle[i] == 14:
-            puzzle.append(9)
-        elif oldPuzzle[i] == 15:
-            puzzle.append(8)
-        elif oldPuzzle[i] == 0:
-            puzzle.append(7)
-        else:
-            puzzle.append(oldPuzzle[i])
-    return puzzle
 
-def printPuzzle(oldPuzzle):
-    puzzle = remapEndSolution(oldPuzzle)
+def printPuzzle(puzzle):
+#    puzzle = remapEndSolution(oldPuzzle)
     for i in range(len(puzzle)):
         if i % theRoot == 0:
             print("")
@@ -253,87 +252,63 @@ def printPuzzle(oldPuzzle):
 
 def printStateOrder(start, end, poppedPuzzles):
     endPuzzle = end
-    print("=====================================================")
+    puzzleCount = 0
+    printPuzzle(endPuzzle.puzzle)
+    print("\n=====================================================\n")
     while True:
-        print("\n")
+        puzzleCount += 1
         popped = poppedPuzzles[endPuzzle.owner]
         if popped.puzzle == start:
-            printPuzzle(endPuzzle.puzzle)
-            print("\n")
-            printPuzzle(popped.puzzle)
+            print(endPuzzle.puzzle)
+            print(popped.puzzle)
             break
-        printPuzzle(endPuzzle.puzzle)
+        print(endPuzzle.puzzle)
         endPuzzle = popped
-    print("\n\n\n=====================================================")
-
-def remapPuzzle(oldPuzzle):
-    puzzle = []
-    global movePiece
-    for i in range(len(oldPuzzle)):
-        if oldPuzzle[i] == 0:
-            puzzle.append(10)
-            movePiece = 10
-        elif oldPuzzle[i] == 12:
-            puzzle.append(5)
-        elif oldPuzzle[i] == 13:
-            puzzle.append(6)
-        elif oldPuzzle[i] == 14:
-            puzzle.append(7)
-        elif oldPuzzle[i] == 5:
-            puzzle.append(8)
-        elif oldPuzzle[i] == 11:
-            puzzle.append(9)
-        elif oldPuzzle[i] == 15:
-            puzzle.append(11)
-        elif oldPuzzle[i] == 6:
-            puzzle.append(12)
-        elif oldPuzzle[i] == 10:
-            puzzle.append(13)
-        elif oldPuzzle[i] == 9:
-            puzzle.append(14)
-        elif oldPuzzle[i] == 8:
-            puzzle.append(15)
-        elif oldPuzzle[i] == 7:
-            puzzle.append(0)
-        else:
-            puzzle.append(oldPuzzle[i])
-    return puzzle
+    print("\n=====================================================")
+    print(str(puzzleCount) + " Steps to solve puzzle")
 
 def solvePuzzle(queue, solved):
     global identityCounter
     global worldClock
-    startingPuzzle = queue[0].puzzle.copy()
+    startingPuzzle = queue[0][2].puzzle.copy()
+    heapq.heapify(queue)
     poppedPuzzles = {}
     queuedPuzzles = {}
     while True:
 #        input("step?")
-        worldClock += 1
-        popped = queue.pop(0)
+#        worldClock += 1
+        popped = heapq.heappop(queue)
+#        print("h = " + str(popped[2].moves))
+#        print("g = " + str(popped[2].weight - popped[2].moves))
         identityCounter += 4
 #        print(popped.puzzle)
-#        popped.printPuzzleClass()
-        if ifSolved(popped.puzzle, solved):
-            printStateOrder(startingPuzzle, popped, poppedPuzzles)
+#        popped[2].printPuzzleClass()
+        if ifSolved(popped[2].puzzle, solved):
+            printStateOrder(startingPuzzle, popped[2], poppedPuzzles)
+            print(str(len(poppedPuzzles) + len(queuedPuzzles) + len(queue)) + " Total States in Memory")
+            print(str(len(poppedPuzzles)) + " States Expanded")
+            print(str(calendar.timegm(time.gmtime()) - startTime) + " Seconds")
             exit()
-        if not duplicatePuzzle(popped, poppedPuzzles):
+        if not duplicatePuzzle(popped[2], poppedPuzzles):
             currentMoves = []
-            currentMoves.append(moveLeft(popped.puzzle, popped.id, popped.moves, solved))
-            currentMoves.append(moveRight(popped.puzzle, popped.id, popped.moves, solved))
-            currentMoves.append(moveDown(popped.puzzle, popped.id, popped.moves, solved))
-            currentMoves.append(moveUp(popped.puzzle, popped.id, popped.moves, solved))
+            currentMoves.append(moveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(moveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(moveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(moveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
             for i in currentMoves:
                 if i:
                     if not duplicatePuzzle(i, poppedPuzzles):
                         if not duplicatePuzzle(i, queuedPuzzles):
-                            insertChild(i, queue)
+                            heapq.heappush(queue, (i.weight, i.id,  i))
+#                            insertChild(i, queue)
                             queuedPuzzles.update( { i.id : i  } )
-            poppedPuzzles.update( { popped.id : popped } )
+            poppedPuzzles.update( { popped[2].id : popped[2] } )
 
 
 puzzleQueue = []
-newPuzzle = remapPuzzle(example)
-solvedPuzzle = returnSolvedExample(len(newPuzzle))
-print(newPuzzle)
-puzzleQueue.append(Puzzle(newPuzzle, getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), 0))
+#newPuzzle = remapPuzzle(example)
+newPuzzle = example
+solvedPuzzle = [1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7]
+#solvedPuzzle = returnSolvedExample(len(example))
+puzzleQueue.append((getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), Puzzle(newPuzzle, getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), 0)))
 solvePuzzle(puzzleQueue, solvedPuzzle)
-print(startTime - calendar.timegm(time.gmtime()))
