@@ -16,7 +16,7 @@ for i in range(area):
         offset = (depth - x - 1) + (depth - y - 1)
     f = (width - 2 * depth)
     tab.append(area - f * f + offset)
-
+print(tab)
 for y in range(height):
     for x in range(width):
         t = tab[width * y + x]

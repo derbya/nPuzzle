@@ -9,6 +9,20 @@ identityCounter = 0
 
 startTime = calendar.timegm(time.gmtime())
 
+argumentDictionary = {}
+for i is not 0 in range(len(sys.argv)):
+    if i == "-f":
+        argumentDictionary.update({ "-f", sys.argv[i + 1]})
+    if i == "-h":
+        argumentDictionary.update({"-h", sys.argv[i + 1].lower()})
+    if i == "-r":
+        argumentDictionary.update({"-r", sys.argv[i + 1]})
+
+heuristicDictionary = {
+        "manhattan" : manhattan,
+        "hamming" : hamming
+        }
+
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
         self.puzzle = puzzle
@@ -102,40 +116,25 @@ def ifSolved(puzzle, solved):
     else:
         return False
 
-#"""
 def getWeight(puzzle, solved, moves):
+    return heuristicDictionary[argumentDictionary["-h"]](puzzle, solved, moves)
+
+def manhattan(puzzle, solved, moves):
     weight = moves
     for i in range(len(puzzle)):
         if i != 0:
-#            print("i = " + str(i))
-#            print(movePiece)
-#            print(" column: " + str(abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))))
-#            print("row: " + str(abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))))
             column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
             row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
-            weight += row + column#(abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot) + abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))))
-#            print("Weight: " + str(weight))
-#            print()
+            weight += row + column
     return weight
-#"""
 
-#    for i in range(len(puzzle)):
-#        try:
-#            if puzzle.index(i) < puzzle.index(i + 1):
-#                weight -= 5
-#            else:
-#                weight += 5
-#        except ValueError:
-
-""" hueuristic 2
-def getWeight(puzzle, solved, moves):
+def hamming(puzzle, solved, moves):
     weight = moves
     for i in range(len(puzzle)):
         if puzzle[i] != solved[i]:
             weight += 5
     return weight
-#"""
-movePiece = 0
+
 def moveUp(puzzle, identity, moves, solved):
     global identityCounter
     index = puzzle.index(0)
