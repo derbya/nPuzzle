@@ -3,6 +3,7 @@ import calendar
 import time
 import math
 import sys
+import random
 import heapq
 
 identityCounter = 0
@@ -10,18 +11,22 @@ identityCounter = 0
 startTime = calendar.timegm(time.gmtime())
 
 argumentDictionary = {}
-for i is not 0 in range(len(sys.argv)):
-    if i == "-f":
-        argumentDictionary.update({ "-f", sys.argv[i + 1]})
-    if i == "-h":
-        argumentDictionary.update({"-h", sys.argv[i + 1].lower()})
-    if i == "-r":
-        argumentDictionary.update({"-r", sys.argv[i + 1]})
 
-heuristicDictionary = {
-        "manhattan" : manhattan,
-        "hamming" : hamming
-        }
+def updateDictionary(argNum, arg):
+    global argumentDictionary
+    try:
+        argumentDictionary.update( { arg : sys.argv[argNum + 1]  } )
+    except IndexError:
+        printUsage()
+        exit()
+
+def printUsage():
+    print("\nUsage: python3 nPuzzle [-f filename] | [-r size] [-h heuristic]\n")
+    print("All flags are optional, and defaults to '-r 4' '-h manhattan'\n")
+    print("-f flag must be followed by a valid file name:                   -f file")
+    print("-r flag must be followed by the size of the random puzzle:       -r 4")
+    print("-h flag must be followed by a valid heuristic:                   -h manhattan")
+    print("\nvalid heuristics: manhattan, hamming, third option\n")
 
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
@@ -39,69 +44,6 @@ class Puzzle:
         print("parent: " + self.owner)
         print("moves: " + str(self.moves))
 
-#"""
-example = [ 0, 2, 1, 3,
-            4, 5, 6, 7,
-            8, 9, 10, 11,
-            12, 13, 14, 15 ]
-#"""
-
-#example = [1, 14, 3, 0,
-#            11, 2, 12, 5,
-#            10, 13, 8, 15,
-#            9, 6, 7, 4]
-
-#example = [ 2, 1, 3, 4,
-#            5, 6, 7, 8,
-#            9, 10, 11, 0,
-#            13, 14, 15, 12]
-
-#example = [ 2,  3,  9,  4,  5,  6,
-#            1,  8,  21,  10, 11, 12,
-#            7, 13, 0, 15, 16, 17,
-#            19, 14, 27, 22, 23, 18,
-#            25, 20, 28, 29, 24, 30,
-#            31, 26, 32, 33, 34, 35]
-
-#example = [0, 1, 2, 3,
-#            5, 6, 7, 4,
-#            9, 10, 11, 8,
-#            13, 14, 15, 12]
-
-#example = [ 1, 3, 4, 0,
-#            12, 2, 14, 5,
-#            11, 13, 15, 6,
-#            10, 9, 8, 7 ]
-
-#example = [1, 2, 3, 4,
-#            5, 6, 7, 8,
-#            9, 10, 11, 12,
-#            13, 14, 0, 15]
-
-"""           1  2  3  4
-           5  6  7  8
-           9  10 11 12
-           13 14 15 0
-
-           1  2  3  4
-           12 13 14 5
-           11 0  15 6
-           10 9  8  7"""
-
-"""
-example = [2, 3, 4, 5,
-           1, 12, 14, 6,
-           13, 15, 7, 0,
-           11, 10, 9, 8]
-#"""
-
-#example = [ 1, 7, 2, 3, 5,
-#            6, 12, 8, 9, 4,
-#            11, 17, 13, 10, 15,
-#            16, 18, 14, 20, 0,
-#            21, 22, 23, 19, 24]
-
-theRoot = math.sqrt(len(example))
 
 def returnSolvedExample(size):
     solvedPuzzle = []
@@ -117,7 +59,7 @@ def ifSolved(puzzle, solved):
         return False
 
 def getWeight(puzzle, solved, moves):
-    return heuristicDictionary[argumentDictionary["-h"]](puzzle, solved, moves)
+    return heuristicDictionary[heuristic](puzzle, solved, moves)
 
 def manhattan(puzzle, solved, moves):
     weight = moves
@@ -135,57 +77,78 @@ def hamming(puzzle, solved, moves):
             weight += 5
     return weight
 
-def moveUp(puzzle, identity, moves, solved):
-    global identityCounter
+def moveUp(puzzle):
     index = puzzle.index(0)
-    newPuzzle = puzzle.copy()
     if index < theRoot:
         return None
     else:
-        newPuzzle[index], newPuzzle[int(index - theRoot)] = newPuzzle[int(index - theRoot)], newPuzzle[index]
+        puzzle[index], puzzle[int(index - theRoot)] = puzzle[int(index - theRoot)], puzzle[index]
+    return puzzle
+
+def returnMoveUp(puzzle, identity, moves, solved):
+    global identityCounter
+    newPuzzle = moveUp(puzzle.copy())
+    if newPuzzle:
         return (Puzzle(newPuzzle,
             getWeight(newPuzzle, solved, moves),
             identity,
             moves + 1))
+    return None
 
-def moveDown(puzzle, identity, moves, solved):
-    global identityCounter
+def moveDown(puzzle):
     index = puzzle.index(0)
-    newPuzzle = puzzle.copy()
     if index >= len(puzzle) - theRoot:
         return None
     else:
-        newPuzzle[index], newPuzzle[int(index + theRoot)] = newPuzzle[int(index + theRoot)], newPuzzle[index]
+        puzzle[index], puzzle[int(index + theRoot)] = puzzle[int(index + theRoot)], puzzle[index]
+    return puzzle
+
+def returnMoveDown(puzzle, identity, moves, solved):
+    global identityCounter
+    newPuzzle = moveDown(puzzle.copy())
+    if newPuzzle:
         return (Puzzle(newPuzzle,
             getWeight(newPuzzle, solved, moves),
             identity,
             moves + 1))
+    return None
 
-def moveRight(puzzle, identity, moves, solved):
-    global identityCounter
+def moveRight(puzzle):
     index = puzzle.index(0)
-    newPuzzle = puzzle.copy()
-    if index % math.sqrt(len(puzzle)) == 0:
+    if index % theRoot == 0:
         return None
     else:
-        newPuzzle[index], newPuzzle[index - 1] = newPuzzle[index - 1], newPuzzle[index]
+        puzzle[index], puzzle[index - 1] = puzzle[index - 1], puzzle[index]
+    return puzzle
+
+def returnMoveRight(puzzle, identity, moves, solved):
+    global identityCounter
+    newPuzzle = moveRight(puzzle.copy())
+    if newPuzzle:
         return (Puzzle(newPuzzle,
             getWeight(newPuzzle, solved, moves),
             identity,
             moves + 1))
+    return None
 
-def moveLeft(puzzle, identity, moves, solved):
-    global identityCounter
+def moveLeft(puzzle):
     index = puzzle.index(0)
-    newPuzzle = puzzle.copy()
     if (index + 1) % theRoot == 0:
         return None
     else:
-        newPuzzle[index], newPuzzle[index + 1] = newPuzzle[index + 1], newPuzzle[index]
+        puzzle[index], puzzle[index + 1] = puzzle[index + 1], puzzle[index]
+    return puzzle
+    
+
+def returnMoveLeft(puzzle, identity, moves, solved):
+    global identityCounter
+    newPuzzle = moveLeft(puzzle.copy())
+    if newPuzzle:
         return (Puzzle(newPuzzle,
             getWeight(newPuzzle, solved, moves),
             identity,
             moves + 1))
+    return None
 
 def insertChild(Puzzle, queue):
     insertCheck = False
@@ -214,7 +177,6 @@ def arrayToString(array):
 
 
 def printPuzzle(puzzle):
-#    puzzle = remapEndSolution(oldPuzzle)
     for i in range(len(puzzle)):
         if i % theRoot == 0:
             print("")
@@ -246,12 +208,7 @@ def solvePuzzle(queue, solved):
     poppedPuzzles = {}
     queuedPuzzles = {}
     while True:
-#        input("step?")
         popped = heapq.heappop(queue)
-#        print("h = " + str(popped[2].moves))
-#        print("g = " + str(popped[2].weight - popped[2].moves))
-#        print(popped.puzzle)
-#        popped[2].printPuzzleClass()
         if ifSolved(popped[2].puzzle, solved):
             printStateOrder(startingPuzzle, popped[2], poppedPuzzles)
             print(str(len(poppedPuzzles) + len(queuedPuzzles) + len(queue)) + " Total States in Memory")
@@ -260,10 +217,10 @@ def solvePuzzle(queue, solved):
             exit()
         if not duplicatePuzzle(popped[2], poppedPuzzles):
             currentMoves = []
-            currentMoves.append(moveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(moveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(moveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(moveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
             for i in currentMoves:
                 if i:
                     if not duplicatePuzzle(i, poppedPuzzles):
@@ -272,9 +229,83 @@ def solvePuzzle(queue, solved):
                             queuedPuzzles.update( { i.id : i  } )
             poppedPuzzles.update( { popped[2].id : popped[2] } )
 
-puzzleQueue = []
-newPuzzle = example
-"""don't hard code things"""
-solvedPuzzle = [1, 2, 3, 4, 12, 13, 14, 5, 11, 0, 15, 6, 10, 9, 8, 7]
-puzzleQueue.append((getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), Puzzle(newPuzzle, getWeight(newPuzzle, solvedPuzzle, 0), arrayToString(newPuzzle), 0)))
-solvePuzzle(puzzleQueue, solvedPuzzle)
+def returnSolvedPuzzle(size):
+    tab = []
+    width = size
+    height = size
+    area = width * height
+    for i in range(area):
+        x = (i % width)
+        y = int(i / width)
+        if x >= y:
+            depth = min(y, width - 1 - x)
+            offset = (x - depth) + (y - depth)
+        else:
+            depth = min(x + 1, height - y)
+            offset = (depth - x - 1) + (depth - y - 1)
+        f = (width - 2 * depth)
+        tab.append(((area - f * f + offset) + 1) % area)
+    return tab
+
+def generateRandomPuzzle(size):
+    puzzle = returnSolvedPuzzle(size)
+    randomMoveNumber = random.randint(0, 250)
+    for i in range(randomMoveNumber):
+        tempPuzzle = moveDictionary[random.randint(1, 4)](puzzle)
+        if tempPuzzle:
+            puzzle = tempPuzzle
+    return puzzle
+
+def getPuzzleFromFile(filename):
+    tab = generateRandomPuzzle(5)
+    print(filename)
+    return tab
+
+path = None
+theRoot = 5
+heuristic = "manhattan"
+
+heuristicDictionary = {
+        "hamming" : hamming,
+        "manhattan" : manhattan
+        }
+
+moveDictionary = {
+        1 : moveLeft,
+        2 : moveRight,
+        3 : moveDown,
+        4 : moveUp
+        }
+
+def main():
+    puzzleQueue = []
+    for i in range(1, len(sys.argv)):
+        if sys.argv[i] == "-f" or sys.argv[i] == "-h" or sys.argv[i] == "-r":
+            updateDictionary(i, sys.argv[i])
+    global path
+    global theRoot
+    global heuristic
+    try:
+        path = argumentDictionary["-f"]
+    except KeyError:
+        pass
+    try:
+        theRoot = int(argumentDictionary["-r"])
+    except KeyError:
+        pass
+    try:
+        heuristic = argumentDictionary["-h"]
+    except KeyError:
+        pass
+    if path:
+        filename = open(path, "r")
+        print("this is a file arg")
+        startingPuzzle = getPuzzleFromFile(filename)
+    else:
+        startingPuzzle = generateRandomPuzzle(theRoot)
+    solvedPuzzle = returnSolvedPuzzle(theRoot)
+    puzzleQueue.append((getWeight(startingPuzzle, solvedPuzzle, 0), arrayToString(startingPuzzle), Puzzle(startingPuzzle, getWeight(startingPuzzle, solvedPuzzle, 0), arrayToString(startingPuzzle), 0)))
+    solvePuzzle(puzzleQueue, solvedPuzzle)
+
+
+main()
