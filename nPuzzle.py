@@ -212,7 +212,7 @@ def solvePuzzle(queue, solved):
         if ifSolved(popped[2].puzzle, solved):
             printStateOrder(startingPuzzle, popped[2], poppedPuzzles)
             print(str(len(poppedPuzzles) + len(queuedPuzzles) + len(queue)) + " Total States in Memory")
-            print(str(len(poppedPuzzles)) + " States Expanded")
+            print(str(len(poppedPuzzles) + 1) + " States Expanded")
             print(str(calendar.timegm(time.gmtime()) - startTime) + " Seconds")
             exit()
         if not duplicatePuzzle(popped[2], poppedPuzzles):
@@ -257,12 +257,12 @@ def generateRandomPuzzle(size):
     return puzzle
 
 def getPuzzleFromFile(filename):
-    tab = generateRandomPuzzle(5)
+    tab = generateRandomPuzzle(4)
     print(filename)
     return tab
 
 path = None
-theRoot = 5
+theRoot = 4
 heuristic = "manhattan"
 
 heuristicDictionary = {
@@ -276,6 +276,15 @@ moveDictionary = {
         3 : moveDown,
         4 : moveUp
         }
+
+#def isValidPuzzle(puzzle):
+#    if len(puzzle) != theRoot * theRoot:
+#        print("Invalid Puzzle")
+#        exit()
+#    for i in range(len(puzzle)):
+#        if puzzle[i] >= len(puzzle):
+#            print("Invalid Puzzle")
+#            exit()
 
 def main():
     puzzleQueue = []
@@ -299,8 +308,19 @@ def main():
         pass
     if path:
         filename = open(path, "r")
-        print("this is a file arg")
-        startingPuzzle = getPuzzleFromFile(filename)
+        fileString = filename.read().replace('\n', ' ').split(' ')
+        theRoot = int(fileString[0])
+        startingPuzzle = []
+        for i in range(1, theRoot * theRoot + 1):
+            try:
+                startingPuzzle.append(int(fileString[i]))
+            except (IndexError, ValueError):
+                print("Invalid Puzzle")
+                exit()
+#        if not isValidPuzzle(startingPuzzle):
+#            print("Puzzle is not solvable")
+#            exit()
+#        startingPuzzle = getPuzzleFromFile(filename)
     else:
         startingPuzzle = generateRandomPuzzle(theRoot)
     solvedPuzzle = returnSolvedPuzzle(theRoot)
