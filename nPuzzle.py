@@ -26,7 +26,7 @@ def printUsage():
     print("-f flag must be followed by a valid file name:                   -f file")
     print("-r flag must be followed by the size of the random puzzle:       -r 4")
     print("-h flag must be followed by a valid heuristic:                   -h manhattan")
-    print("\nvalid heuristics: manhattan, hamming, third option\n")
+    print("\nvalid heuristics: manhattan, hamming, definitelyadmissible, adjustmanhattan\n")
 
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
@@ -60,6 +60,24 @@ def ifSolved(puzzle, solved):
 
 def getWeight(puzzle, solved, moves):
     return heuristicDictionary[heuristic](puzzle, solved, moves)
+
+def definitelyAdmissible(puzzle, solved, moves):
+    weight = 0
+    for i in range(len(puzzle)):
+        if i != 0:
+            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
+            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
+            weight += row + column
+    return (weight * 1.05) + moves
+
+def adjustedManhattan(puzzle, solved, moves):
+    weight = 0
+    for i in range(len(puzzle)):
+        if i != 0:
+            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
+            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
+            weight += row + column
+    return (weight * 1.05) + moves#+ (puzzle.index(0) % 2)
 
 def manhattan(puzzle, solved, moves):
     weight = moves
@@ -267,7 +285,9 @@ heuristic = "manhattan"
 
 heuristicDictionary = {
         "hamming" : hamming,
-        "manhattan" : manhattan
+        "manhattan" : manhattan,
+        "definitelyadmissible" : definitelyAdmissible
+        "adjustedmanhattan" : adjustedManhattan
         }
 
 moveDictionary = {
