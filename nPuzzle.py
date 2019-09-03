@@ -26,7 +26,7 @@ def printUsage():
     print("-f flag must be followed by a valid file name:                   -f file")
     print("-r flag must be followed by the size of the random puzzle:       -r 4")
     print("-h flag must be followed by a valid heuristic:                   -h manhattan")
-    print("\nvalid heuristics: manhattan, hamming, definitelyadmissible, adjustmanhattan\n")
+    print("\nvalid heuristics: manhattan, hamming, definitelyadmissible\n")
 
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
@@ -69,15 +69,6 @@ def definitelyAdmissible(puzzle, solved, moves):
             row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
             weight += row + column
     return (weight * 1.05) + moves
-
-def adjustedManhattan(puzzle, solved, moves):
-    weight = 0
-    for i in range(len(puzzle)):
-        if i != 0:
-            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
-            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
-            weight += row + column
-    return (weight * 1.05) + moves#+ (puzzle.index(0) % 2)
 
 def manhattan(puzzle, solved, moves):
     weight = moves
@@ -287,7 +278,6 @@ heuristicDictionary = {
         "hamming" : hamming,
         "manhattan" : manhattan,
         "definitelyadmissible" : definitelyAdmissible
-        "adjustedmanhattan" : adjustedManhattan
         }
 
 moveDictionary = {
@@ -296,15 +286,6 @@ moveDictionary = {
         3 : moveDown,
         4 : moveUp
         }
-
-#def isValidPuzzle(puzzle):
-#    if len(puzzle) != theRoot * theRoot:
-#        print("Invalid Puzzle")
-#        exit()
-#    for i in range(len(puzzle)):
-#        if puzzle[i] >= len(puzzle):
-#            print("Invalid Puzzle")
-#            exit()
 
 def main():
     puzzleQueue = []
@@ -323,7 +304,7 @@ def main():
     except KeyError:
         pass
     try:
-        heuristic = argumentDictionary["-h"]
+        heuristic = argumentDictionary["-h"].lower()
     except KeyError:
         pass
     if path:
