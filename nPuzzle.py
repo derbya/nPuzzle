@@ -26,7 +26,7 @@ def printUsage():
     print("-f flag must be followed by a valid file name:                   -f file")
     print("-r flag must be followed by the size of the random puzzle:       -r 4")
     print("-h flag must be followed by a valid heuristic:                   -h manhattan")
-    print("\nvalid heuristics: manhattan, hamming, definitelyadmissible\n")
+    print("\nvalid heuristics: manhattan, hamming, definitelyadmissible, manhattancorners\n")
 
 class Puzzle:
     def __init__(self, puzzle, weight, owner, moves):
@@ -60,6 +60,28 @@ def ifSolved(puzzle, solved):
 
 def getWeight(puzzle, solved, moves):
     return heuristicDictionary[heuristic](puzzle, solved, moves)
+
+def getCornerValues(puzzle, solved):
+    corners = 0
+    if puzzle.index(1) == solved.index(1):
+        corners += 1
+    if puzzle.index(theRoot) == solved.index(theRoot):
+        corners += 1
+    if puzzle.index(theRoot + theRoot - 1) == solved.index(theRoot + theRoot - 1):
+        corners += 1
+    if puzzle.index(theRoot + theRoot + theRoot - 2) == solved.index(theRoot + theRoot + theRoot - 2):
+        corners += 1
+    return corners
+
+def manhattanCorners(puzzle, solved, moves):
+    weight = moves
+    corners = getCornerValues(puzzle, solved)
+    for i in range(len(puzzle)):
+        if i != 0:
+            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
+            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
+            weight += row + column
+    return weight - corners
 
 def definitelyAdmissible(puzzle, solved, moves):
     weight = 0
@@ -277,6 +299,7 @@ heuristic = "manhattan"
 heuristicDictionary = {
         "hamming" : hamming,
         "manhattan" : manhattan,
+        "manhattancorners" : manhattanCorners,
         "definitelyadmissible" : definitelyAdmissible
         }
 
