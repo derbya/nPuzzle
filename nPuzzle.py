@@ -61,6 +61,22 @@ def ifSolved(puzzle, solved):
 def getWeight(puzzle, solved, moves):
     return heuristicDictionary[heuristic](puzzle, solved, moves)
 
+def sequenceScore(puzzle, solved):
+    count = 0
+    for i in range(len(puzzle) - 1):
+        if puzzle[puzzle.index(i) + 1] == solved[solved.index(i) + 1]:
+            count += 2
+    return count
+
+def manhattanSequence(puzzle, solved, moves):
+    weight = moves
+    for i in range(len(puzzle)):
+        if i != 0:
+            column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
+            row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
+            weight += row + column
+    return weight + sequenceScore()
+
 def getCornerValues(puzzle, solved):
     corners = 0
     if puzzle.index(1) == solved.index(1):
@@ -71,7 +87,7 @@ def getCornerValues(puzzle, solved):
         corners += 1
     if puzzle.index(theRoot + theRoot + theRoot - 2) == solved.index(theRoot + theRoot + theRoot - 2):
         corners += 1
-    return corners
+    return corners / 2
 
 def manhattanCorners(puzzle, solved, moves):
     weight = moves
@@ -81,6 +97,8 @@ def manhattanCorners(puzzle, solved, moves):
             column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
             row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
             weight += row + column
+    if weight - corners < 0:
+        return 0
     return weight - corners
 
 def definitelyAdmissible(puzzle, solved, moves):
@@ -197,7 +215,10 @@ def insertChild(Puzzle, queue):
 def duplicatePuzzle(popped, poppedPuzzles):
     try:
         if poppedPuzzles[popped.id]:
-            return True
+            if poppedPuzzles[popped.id].weight <= popped.weight:
+                return True
+            else:
+                return False
     except KeyError:
         return False
 
@@ -209,11 +230,12 @@ def arrayToString(array):
 
 def printPuzzle(puzzle):
     for i in range(len(puzzle)):
-        if i % theRoot == 0:
+        if i % theRoot == 0 and i != 0:
             print("")
         print(str(puzzle[i]), end = " ")
         if puzzle[i] < 10:
             print(end = " ")
+    print("")
 
 def printStateOrder(start, end, poppedPuzzles):
     endPuzzle = end
@@ -246,19 +268,19 @@ def solvePuzzle(queue, solved):
             print(str(len(poppedPuzzles) + 1) + " States Expanded")
             print(str(calendar.timegm(time.gmtime()) - startTime) + " Seconds")
             exit()
-        if not duplicatePuzzle(popped[2], poppedPuzzles):
-            currentMoves = []
-            currentMoves.append(returnMoveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(returnMoveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(returnMoveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            currentMoves.append(returnMoveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-            for i in currentMoves:
-                if i:
-                    if not duplicatePuzzle(i, poppedPuzzles):
-                        if not duplicatePuzzle(i, queuedPuzzles):
-                            heapq.heappush(queue, (i.weight, i.id,  i))
-                            queuedPuzzles.update( { i.id : i  } )
-            poppedPuzzles.update( { popped[2].id : popped[2] } )
+#        if not duplicatePuzzle(popped[2], poppedPuzzles):
+        currentMoves = []
+        currentMoves.append(returnMoveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+        currentMoves.append(returnMoveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+        currentMoves.append(returnMoveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+        currentMoves.append(returnMoveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+        for i in currentMoves:
+            if i:
+                if not duplicatePuzzle(i, poppedPuzzles):
+                    if not duplicatePuzzle(i, queuedPuzzles):
+                        heapq.heappush(queue, (i.weight, i.id,  i))
+                        queuedPuzzles.update( { i.id : i  } )
+        poppedPuzzles.update( { popped[2].id : popped[2] } )
 
 def returnSolvedPuzzle(size):
     tab = []
@@ -280,7 +302,8 @@ def returnSolvedPuzzle(size):
 
 def generateRandomPuzzle(size):
     puzzle = returnSolvedPuzzle(size)
-    randomMoveNumber = random.randint(0, 250)
+    #randomMoveNumber = random.randint(0, 1000000)
+    randomMoveNumber = 250
     for i in range(randomMoveNumber):
         tempPuzzle = moveDictionary[random.randint(1, 4)](puzzle)
         if tempPuzzle:
@@ -295,6 +318,7 @@ def getPuzzleFromFile(filename):
 path = None
 theRoot = 4
 heuristic = "manhattan"
+printFlag = None
 
 heuristicDictionary = {
         "hamming" : hamming,
@@ -313,11 +337,12 @@ moveDictionary = {
 def main():
     puzzleQueue = []
     for i in range(1, len(sys.argv)):
-        if sys.argv[i] == "-f" or sys.argv[i] == "-h" or sys.argv[i] == "-r":
+        if sys.argv[i] == "-f" or sys.argv[i] == "-h" or sys.argv[i] == "-r" or sys.argv[i] == "-p":
             updateDictionary(i, sys.argv[i])
     global path
     global theRoot
     global heuristic
+    global printFlag
     try:
         path = argumentDictionary["-f"]
     except KeyError:
@@ -330,9 +355,13 @@ def main():
         heuristic = argumentDictionary["-h"].lower()
     except KeyError:
         pass
+    try:
+        printFlag = argumentDictionary["-p"].lower()
+    except KeyError:
+        pass
     if path:
         filename = open(path, "r")
-        fileString = filename.read().replace('\n', ' ').split(' ')
+        fileString = filename.read().split()
         theRoot = int(fileString[0])
         startingPuzzle = []
         for i in range(1, theRoot * theRoot + 1):
@@ -349,6 +378,13 @@ def main():
         startingPuzzle = generateRandomPuzzle(theRoot)
     solvedPuzzle = returnSolvedPuzzle(theRoot)
     puzzleQueue.append((getWeight(startingPuzzle, solvedPuzzle, 0), arrayToString(startingPuzzle), Puzzle(startingPuzzle, getWeight(startingPuzzle, solvedPuzzle, 0), arrayToString(startingPuzzle), 0)))
+    if printFlag:
+        if argumentDictionary["-p"] == "notsolve":
+            print(theRoot)
+            printPuzzle(startingPuzzle)
+            exit()
+        print(theRoot)
+        printPuzzle(startingPuzzle)
     solvePuzzle(puzzleQueue, solvedPuzzle)
 
 
