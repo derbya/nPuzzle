@@ -61,6 +61,23 @@ def ifSolved(puzzle, solved):
 def getWeight(puzzle, solved, moves):
     return heuristicDictionary[heuristic](puzzle, solved, moves)
 
+def swapMethod(puzzle, solved, moves):
+    ret = moves
+    puzzleCopy = puzzle.copy()
+    while puzzleCopy != solved:
+        zeroIndex = puzzleCopy.index(0)
+        if solved[zeroIndex] != 0:
+            swapNum = solved[zeroIndex]
+            swapIndex = puzzleCopy.index(swapNum)
+            puzzleCopy[swapIndex], puzzleCopy[zeroIndex] = puzzleCopy[zeroIndex], puzzleCopy[swapIndex]
+        else:
+            for i in range(theRoot * theRoot):
+                if solved[i] != puzzleCopy[i]:
+                    puzzleCopy[i], puzzleCopy[zeroIndex] = puzzleCopy[zeroIndex], puzzleCopy[i]
+                    break
+        ret += 1
+    return ret
+
 def sequenceScore(puzzle, solved):
     count = 0
     for i in range(len(puzzle) - 1):
@@ -76,6 +93,9 @@ def manhattanSequence(puzzle, solved, moves):
             row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
             weight += row + column
     return weight + sequenceScore()
+
+def getZeroHeuristic(puzzle, solved, moves):
+    return moves
 
 def getCornerValues(puzzle, solved):
     corners = 0
@@ -97,8 +117,8 @@ def manhattanCorners(puzzle, solved, moves):
             column = abs((puzzle.index(i) % theRoot) - (solved.index(i) % theRoot))
             row = abs(int(puzzle.index(i) / theRoot) - int(solved.index(i) / theRoot))
             weight += row + column
-    if weight - corners < 0:
-        return 0
+    if weight - moves < corners:
+        return weight
     return weight - corners
 
 def definitelyAdmissible(puzzle, solved, moves):
@@ -268,19 +288,19 @@ def solvePuzzle(queue, solved):
             print(str(len(poppedPuzzles) + 1) + " States Expanded")
             print(str(calendar.timegm(time.gmtime()) - startTime) + " Seconds")
             exit()
-#        if not duplicatePuzzle(popped[2], poppedPuzzles):
-        currentMoves = []
-        currentMoves.append(returnMoveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-        currentMoves.append(returnMoveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-        currentMoves.append(returnMoveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-        currentMoves.append(returnMoveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
-        for i in currentMoves:
-            if i:
-                if not duplicatePuzzle(i, poppedPuzzles):
-                    if not duplicatePuzzle(i, queuedPuzzles):
-                        heapq.heappush(queue, (i.weight, i.id,  i))
-                        queuedPuzzles.update( { i.id : i  } )
-        poppedPuzzles.update( { popped[2].id : popped[2] } )
+        if not duplicatePuzzle(popped[2], poppedPuzzles):
+            currentMoves = []
+            currentMoves.append(returnMoveDown(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveRight(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveLeft(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            currentMoves.append(returnMoveUp(popped[2].puzzle, popped[2].id, popped[2].moves, solved))
+            for i in currentMoves:
+                if i:
+                    if not duplicatePuzzle(i, poppedPuzzles):
+                        if not duplicatePuzzle(i, queuedPuzzles):
+                            heapq.heappush(queue, (i.weight, i.id,  i))
+                            queuedPuzzles.update( { i.id : i  } )
+                        poppedPuzzles.update( { popped[2].id : popped[2] } )
 
 def returnSolvedPuzzle(size):
     tab = []
@@ -303,7 +323,7 @@ def returnSolvedPuzzle(size):
 def generateRandomPuzzle(size):
     puzzle = returnSolvedPuzzle(size)
     #randomMoveNumber = random.randint(0, 1000000)
-    randomMoveNumber = 250
+    randomMoveNumber = 200
     for i in range(randomMoveNumber):
         tempPuzzle = moveDictionary[random.randint(1, 4)](puzzle)
         if tempPuzzle:
@@ -323,7 +343,9 @@ printFlag = None
 heuristicDictionary = {
         "hamming" : hamming,
         "manhattan" : manhattan,
-        "manhattancorners" : manhattanCorners,
+        "corners" : manhattanCorners,
+        "zero" : getZeroHeuristic,
+        "swap" : swapMethod,
         "definitelyadmissible" : definitelyAdmissible
         }
 
