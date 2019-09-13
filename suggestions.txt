@@ -1,0 +1,19 @@
+separate the functions into different files; at least:
+	a file containing all the heuristics
+	a file containing the A* algorithm and helper functions
+	a file containing the puzzle generator and UI elements
+
+see if moveUp and returnMoveUp can be combined
+	same for the other three
+
+replace all theRoot*theRoot with a second global variable
+	also probably rename theRoot to something more descriptive (puzzleWidth? boardSize?)
+
+take the weight = moves out of all the heuristics and put it in the algorithm
+
+make startTime a local variable
+	could have solvePuzzle return the solved puzzle instead of exit()ing, and then time that function call
+
+puzzle file without a bad size causes crash
+
+add -p to usage
